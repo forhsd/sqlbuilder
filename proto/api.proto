@@ -1,0 +1,360 @@
+﻿syntax = "proto3";
+
+package proto;
+option go_package = "./proto;proto";
+
+//option java_multiple_files = false;
+//option java_package = "com.holder.sqlbuilder.proto";
+//option java_outer_classname = "SqlBuilderApiProto";
+//import "google/api/annotations.proto";
+
+
+service SqlBuilderApi {
+
+  rpc Generate (BuilderRequest) returns (CommonResponse) {
+    //    option (google.api.http) = {
+    //      post: "/api/v1/sqlbuilder",
+    //      body: "*"
+    //    };
+  }
+
+  rpc AnalyzeTemplate (AnalyzeTemplateRequest) returns (CommonResponse) {
+    //    option (google.api.http) = {
+    //      post: "/api/v1/sqlbuilder/template-analyze",
+    //      body: "*"
+    //    };
+  }
+}
+
+// -----------------------------------------------   响应体  -----------------------------------------------------
+
+
+message CommonResponse {
+  int32 code = 1;
+  string msg = 2;
+  map<string, string> data = 3;
+}
+
+// -----------------------------------------------   请求体  -----------------------------------------------------
+
+enum Driver {
+  DRIVER_UNSPECIFIED = 0;
+  DRIVER_POSTGRES = 1;
+  DRIVER_MYSQL = 2;
+  DRIVER_DORIS = 3;
+}
+
+enum BuilderStrategy {
+  BUILDER_STRATEGY_UNSPECIFIED = 0;
+  BUILDER_STRATEGY_MODEL = 1;
+  BUILDER_STRATEGY_TEMPLATE = 2;
+}
+
+enum CallType {
+  CALL_TYPE_UNSPECIFIED = 0;
+  CALL_TYPE_AGG = 1;
+  CALL_TYPE_INNER = 2;
+  CALL_TYPE_CUSTOM = 3;
+  // e.g. + - / * %
+  CALL_TYPE_ARITH = 4;
+  CALL_TYPE_LITERAL = 5;
+  // e.g.  =, !=, <, >, <=, >=, between, is null, is not null, etc
+  CALL_TYPE_BOOLEAN = 6;
+}
+
+
+message BuilderRequest {
+  repeated DeepWrapper builders = 1;
+  Driver driver = 2;
+  BuilderStrategy strategy = 3;
+}
+
+message DeepWrapper {
+  int32 deep = 1;
+  MixSql sql = 2;
+}
+
+message MixSql {
+  oneof ref {
+    SqlReference model = 1;
+    SqlText template = 2;
+  }
+}
+
+message SqlText {
+  string text = 1;
+  map<string, TemplateArg> args = 2;
+}
+
+message SqlReference {
+  MixTable from = 1;
+  repeated Join join = 2;
+  repeated MixWhere where = 3;
+  // GroupBy 可以是 Column 或 Expression
+  repeated MixField group_by = 4;
+  repeated Expression aggregation = 5;
+  // Select 可以是 Column 或 Expression
+  repeated MixField select = 6;
+  repeated OrderBy order_by = 7;
+  optional Limit limit = 8;
+  // 新结构(where 递归树表达), 优先级>MixWhere(2)
+  // 不适用于过往 where-cond 条件之间逻辑处理, 要求明确指定逻辑分组, 不同逻辑只能是不同分组
+  // 因此需要单独查询一次构造 where-group-cond
+  optional LogicGroup logic_where = 9;
+}
+
+// -----------------------------------------------   SqlReference 内部  -----------------------------------------------------
+
+message Table {
+  string table_name = 1;
+  string table_schema = 2;
+  string table_alias = 3;
+}
+
+message LiteralTable {
+  StringLiteral sub_literal = 1;
+  string literal_alias = 2;
+}
+
+message MixTable {
+  oneof mt {
+    Table normal_table = 1;
+    LiteralTable literal_table = 2;
+  }
+}
+
+
+// -----------------------------------------------   以上 From  -----------------------------------------------------
+
+enum JoinType {
+  JOIN_TYPE_UNSPECIFIED = 0;
+  JOIN_TYPE_LEFT = 1;
+  JOIN_TYPE_RIGHT = 2;
+  JOIN_TYPE_INNER = 3;
+  JOIN_TYPE_FULL = 4;
+  JOIN_TYPE_CROSS = 5;
+}
+
+message Join {
+  JoinType type = 1;
+  MixTable table = 2;
+  JoinCondition joinCondition = 3;
+}
+
+message JoinCondition {
+  oneof jc {
+    JoinCondMulti multi_cond = 1;
+    // 字面量可能包含多个on条件
+    StringLiteral cond_literal = 2;
+  }
+}
+
+message JoinCondMulti {
+  repeated JoinCond joinCond = 1;
+}
+
+message JoinCond {
+  oneof mix {
+    OnField onField = 1;
+    Condition onCond = 2;
+  }
+}
+
+message OnField {
+  MixField left = 1;
+  MixField right = 2;
+  Op on = 3;
+  Logic logic = 4; // 和下一个条件的逻辑关系, 默认 and, 可选or
+}
+
+// -----------------------------------------------   以上 Join  -----------------------------------------------------
+
+message OrderBy {
+  MixField dependent = 1;
+  string order = 2;
+}
+
+// -----------------------------------------------   以上 OrderBy  -----------------------------------------------------
+
+message Limit {
+  int32 limit_n = 1;
+  int32 offset = 2;
+}
+
+// -----------------------------------------------   以上 Limit  -----------------------------------------------------
+
+message Column {
+  string field = 1;
+  string table = 2;
+  string schema = 3;
+  string alias = 4;
+  bool agg_able = 5;
+  bool use_as = 6;
+}
+
+// 表达式不在vars使用类似递归, 而是平铺可能好点. ExpressionWrapper{int32 deep = 1; repeated Expression exps = 2;}
+message Expression {
+  string call = 1;
+  CallType call_type = 2;
+  repeated MixVars vars = 3;
+  string call_as = 4;
+  bool use_as = 5;
+  // 表达式是否加小括号, 新增 pnt-format
+  bool use_pnt = 6;
+  // 处理极其复杂的表达式或公式, 调用方直接将字面量片段给到 sqlbuilder, 不做任何处理
+  optional StringLiteral str_literal = 7;
+}
+
+message MixVars {
+  oneof vars {
+    Column column = 1;
+    Expression expression = 2;
+    MultiCondition multi_condition = 4;
+    // todo 暂未适配
+    LogicGroup logic_condition = 5;
+    string context = 6;
+    int64 number = 7;
+    double double_num = 8;
+    StringLiteral str_literal = 9; // 字符串字面量不会默认加单引号
+    CaseWhen cw = 10;
+  }
+}
+
+// todo  未处理: 添加 Condition 会导致递归嵌套
+// SELECT array_length(array_column, 1) > 0 FROM my_table; SELECT NOT column_name FROM my_table; => Condition
+message MixField {
+  oneof mix {
+    Column column = 1;
+    Expression expression = 2;
+    CaseWhen case_when = 3;
+  }
+}
+
+message CaseWhen {
+  repeated CaseWhenItem conditions = 1;
+  optional BasicData else_value = 2;
+  string alias = 3;
+  bool use_as = 4;
+}
+
+// 每一行 case-when-then就是多个条件组成的语句
+message CaseWhenItem {
+  repeated MixWhere when = 1;
+  BasicData then = 2;
+}
+
+// 多个条件组合
+message MultiCondition {
+  repeated MixWhere conditions = 1;
+}
+
+
+// -----------------------------------------------   以上 Select  -----------------------------------------------------
+
+message LogicNode {
+  oneof node {
+    LogicGroup group = 1;      // 一个逻辑组合（AND/OR）递归结构
+    MixWhere leaf = 2;         // 一个条件：Condition 或 Expression
+  }
+}
+
+message LogicGroup {
+  Logic logic = 1;                   // 当前 group 的逻辑操作（AND / OR）
+  repeated LogicNode children = 2;  // 子节点（可继续是 group 或 leaf）
+  bool use_pnt = 3;                 // 是否加括号包裹整个 group
+}
+
+
+message MixWhere {
+  oneof filter {
+    Condition condition = 1;
+    Expression expression = 2; // e.g. WHERE ARRAY_CONTAINS(tags, 'urgent') => 视作 Condition.MixField.Expression
+  }
+}
+
+message Condition {
+  MixField field = 1; // 暂时不考虑 where 1=1, where true; MixField.Expression 覆盖 WHERE ARRAY_LENGTH(my_array, 1) > 5 场景
+  repeated BasicData args = 2;
+  Op operator = 3;
+  Logic logic = 4; // 和上一个条件的逻辑关系, 默认 and, 可选or
+  bool reverse = 5; // 是否对该条件取反(NOT)
+  string group_id = 6; // 组内根据logic独立构建, 组之间是and
+  bool use_pnt = 7; // 该条件块是否加小括号, 新增 pnt-format
+  optional StringLiteral literal_cond = 8; // 如果是字面量，将不再执行 [MixField Op BasicData], 直接与其他条件逻辑与逻辑或
+}
+
+enum Logic {
+  LOGIC_UNSPECIFIED = 0;
+  LOGIC_AND = 1;
+  LOGIC_OR = 2;
+  LOGIC_NOT = 3;
+}
+
+enum Op {
+  OP_UNSPECIFIED = 0; // 默认值或未定义状态
+
+  OP_EQ = 1;         // "="
+  OP_NEQ = 2;        // "<>"
+  OP_LT = 3;         // "<"
+  OP_LTE = 4;        // "<="
+  OP_GT = 5;         // ">"
+  OP_GTE = 6;        // ">="
+  OP_LIKE = 7;       // "like"
+  OP_NOT_LIKE = 8;       // "not like", like && reverse=true
+  OP_PREFIX_LIKE = 9;       // "left like = %s模糊"
+  OP_LIKE_SUFFIX = 10;       // like right = 模糊%s"
+
+  OP_BETWEEN = 11;    // "between"
+  OP_IN = 12;         // "in"
+
+  OP_NOT_IN = 13;   // "not in"
+  OP_IS_NULL = 14;   // "is null"
+  OP_IS_NOT_NULL = 15; // "is not null"
+
+  OP_AND = 16;       // "or"
+  OP_OR = 17;        // "and"
+}
+
+
+// 字符串字面量
+message StringLiteral {
+  string literal = 1;
+}
+
+message BasicData {
+  oneof data {
+    int64 int_val = 1; // 覆盖 int32
+    double double_val = 2; // 覆盖 float
+    string str_val = 3; // 字符串会默认加单引号
+    bool logic = 4;
+    StringLiteral str_literal = 5; // 字符串字面量不会默认加单引号
+  }
+}
+
+// -----------------------------------------------   以上 Where  -----------------------------------------------------
+
+
+message BasicDataArr {
+  repeated BasicData args = 1;
+}
+
+message TemplateArg {
+  oneof data {
+    int64 int_val = 1; // 覆盖 int32
+    double double_val = 2; // 覆盖 float
+    string str_val = 3;
+    bool bool_val = 4;
+    BasicDataArr val_items = 5;
+  }
+}
+
+message AnalyzeTemplateRequest {
+  string tmpl = 1;
+  map<string, TemplateArg> args = 2;
+}
+
+message AnalyzeAdditionRequest {
+  string tmpl = 1;
+}
+
+

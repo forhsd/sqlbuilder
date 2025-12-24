@@ -1,0 +1,23 @@
+server:
+  port: 7077
+
+#mysql:
+#  driver: mysql
+#  host: 111.111.11.11
+#  port: 3306
+#  username: root
+#  password: root
+#  dbname: xxxx
+
+pg:
+  driver: postgres
+  host: 111.111.11.11
+  port: 5000
+  username: postgres
+  password: postgres
+  dbname: xxx
+
+redis:
+  address: localhost:6379
+  password: ""
+  database: 0

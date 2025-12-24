@@ -1,0 +1,20 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Go wasm</title>
+    <script src="wasm_exec_go.js"></script>
+    <script>
+        const go = new Go()
+        WebAssembly.instantiateStreaming(
+            fetch('index_go.wasm'),
+            go.importObject
+        ).then((res) => {
+            go.run(res.instance)
+            console.log(res.instance)
+        })
+    </script>
+</head>
+
+<body></body>
+</html>

@@ -1,0 +1,107 @@
+﻿package main
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"github.com/forhsd/logger"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
+	"log"
+	"net"
+	"net/http"
+	pb "sql-builder/gen/proto"
+)
+
+var protoJsonOP = protojson.MarshalOptions{
+	EmitUnpopulated: true,
+	// UseEnumNumbers:  true,
+}
+
+func Run(endpoint string) error {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Register gRPC server endpoint
+	// Note: Make sure the gRPC server is running properly and accessible
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	err := pb.RegisterSqlBuilderApiHandlerFromEndpoint(ctx, mux, endpoint, opts)
+	if err != nil {
+		log.Fatalf("Register Endpoint err: %v", err)
+	}
+
+	// Start HTTP server (and proxy calls to gRPC server endpoint)
+	return http.ListenAndServe(":7077", mux)
+}
+
+type server struct {
+	pb.UnimplementedSqlBuilderApiServer
+}
+
+func (s *server) Generate(ctx context.Context, req *pb.BuilderRequest) (*pb.Response, error) {
+
+	logger.Info("%+v", req)
+
+	b1, e1 := protoJsonOP.Marshal(req)
+	s2 := string(b1)
+	fmt.Println(s2)
+
+	column := pb.Mix_Column{
+		Column: &pb.Column{Schema: "sample", Table: "table1", Field: "f1", Alias: "a1", AggAble: false, UseAs: false},
+	}
+	mix := &pb.Mix{
+		Tuple: &column,
+	}
+	sql := pb.SQLReference{
+		Select: []*pb.Mix{mix},
+	}
+
+	b, e1 := protoJsonOP.Marshal(&sql)
+	if e1 != nil {
+		return nil, e1
+	}
+
+	fmt.Println(string(b))
+
+	return nil, nil
+}
+
+var (
+	// command-line options:
+	// gRPC server endpoint
+	grpcServerEndpoint = flag.String("grpc-server-endpoint", "localhost:7070", "gRPC server endpoint")
+)
+
+func main() {
+	// flag.Parse() 会将剩余的非标志参数（也就是没有 - 或 -- 前缀的参数）放入 flag.Args() 中, 标志变量 --varX, 使用: var varX string
+	flag.Parse()
+	// 监听本地端口
+	listener, err := net.Listen("tcp", ":7070")
+	if err != nil {
+		log.Fatalf("grpc net.Listen err: %v", err)
+	}
+
+	// 新建gRPC服务器实例
+	grpcServer := grpc.NewServer()
+	// 在gRPC服务器注册我们的服务
+	pb.RegisterSqlBuilderApiServer(grpcServer, &server{})
+
+	go func() {
+		// 用服务器 Serve() 方法以及我们的端口信息区实现阻塞等待，直到进程被杀死或者 Stop() 被调用
+		err = grpcServer.Serve(listener)
+		if err != nil {
+			log.Fatalf("grpcServer.Serve err: %v", err)
+		}
+	}()
+
+	// grpc-->http
+	//httpServer := gateway.ProvideHTTP(Address, grpcServer)
+	err = Run(*grpcServerEndpoint)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
+}

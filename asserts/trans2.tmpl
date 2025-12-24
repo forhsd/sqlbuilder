@@ -1,0 +1,198 @@
+﻿{{/* 用户控制规范化SQL变量值  */}}
+
+{{   define    "slave1"   }}
+    select
+        string_agg(
+            concat(
+                'sum(
+                    case
+                        when htr.payment_type_name = ''',x.payment_type_name,''' then htr.amount - htr.refund_amount
+                    end
+                ) as ','"',x.payment_type_name,'"'
+            ),','
+        )
+    from (
+        select
+            payment_type_name
+        from "hst_trade_887f2181-eb06-4d77-b914-7c37c884952c_db".hst_transaction_record,
+            LATERAL (
+                select
+                    public.getlist(
+                        public.getacl(
+                            {{N1V .PrivilegesFlag}},
+                            ({{PowerList .Guids}})::text
+                        ),
+                        ({{PowerList .Guids}})::text,
+                        array[
+                            {{/* with会对指定变量重新指定临时变量并赋值,方法体内的{{.}}此时代表.STORE_GUID  */}}
+                            {{- with .STORE_GUID -}}
+                                {{- N1V . -}}
+                            {{- else -}}
+                                '-1'
+                            {{- end}}
+                            ,
+                           {{with .GROUP_STORE_GUID -}}
+                                {{- N1V . -}}
+                            {{- else -}}
+                                '-1'
+                            {{- end}}
+                        ]
+                    ) list,
+                    public.getacl(
+                        {{N1V .PrivilegesFlag}},
+                        {{N1Arr .Guids}},
+                        ({{PowerList .Guids}})::text
+                    ) chmod
+            ) acl
+        where
+            acl.chmod
+            and is_delete = 0
+            and state = 4
+
+            {{if and .START_TIME .END_TIME}}
+                and business_day between {{N1V .START_TIME}}::date and {{N1V .END_TIME}}::date
+            {{end}}
+
+            and case acl.list
+                when 'true' then true
+                when 'false' then false
+                -- when 'false' then true  --debug
+                else (store_guid = any(acl.list::text[]))
+            end
+
+            {{if .PAYMENT_TYPE_NAME}}
+                and payment_type_name = any( {{N1V .PAYMENT_TYPE_NAME}}::text[])
+            {{end}}
+
+        group by
+            payment_type_name
+        order by
+            payment_type_name
+    ) x
+{{  end   }}
+
+
+{{/* 测试获取多个模板,但不渲染  */}}
+{{define "slave2"}}
+    select
+        public.getlist(
+            public.getacl(
+                {{N1V .PrivilegesFlag}},
+                ({{PowerList .Guids}})::text
+            ),
+            ({{PowerList .Guids}})::text,
+            array[
+                {{if .STORE_GUID}}
+                    {{N1V .STORE_GUID}}
+                {{else}}
+                    '-1'
+                {{end}}
+                ,
+            {{if .GROUP_STORE_GUID}}
+                    {{N1V .GROUP_STORE_GUID}}
+                {{else}}
+                    '-1'
+                {{end}}
+            ]
+        ) list,
+        public.getacl(
+            {{N1V .PrivilegesFlag}},
+            ({{PowerList .Guids}})::text
+        ) chmod
+{{end}}
+
+
+
+{{define "master"}}
+-- 堂食支付方式汇总表
+select
+    case when htr.store_guid isnull then '合计' else max(x.name) end 战区,
+    null 城市,
+    case when htr.store_guid isnull then null else max(x.username) end 区经理,
+    htr.store_guid 门店编码,
+    case when htr.store_guid isnull then null else max(htr.store_name) end 门店,
+    htr.business_day::text 营业日期,
+
+    {{.slave1}},
+
+    /*concat(
+        '[{"type":"mergeTitle",
+           "addField":["现金支付","会员支付","聚合支付","UI自动化勿动","员工支付","大幅度"],
+           "refField":[{"start":4,"end":5},{"start":6,"end":7},{"start":8,"end":9},{"start":10,"end":11},{"start":12,"end":13},{"start":14,"end":15}],
+            "mergerRow":[0,1,2,3]}
+           ]'
+     )*/
+
+    sum(htr.amount - htr.refund_amount) 合计
+from "hst_trade_887f2181-eb06-4d77-b914-7c37c884952c_db".hst_transaction_record htr
+    left join (
+        select
+            mos.external_part_org_id,
+            u.username,
+            ti2.name
+        from team.mapping_org_structure mos -- on htr.store_guid = mos.external_part_org_id
+            left join team.team_info ti on mos.holder_id = ti.id
+            left join team.team_info ti2 on ti.parent_id = ti2.id
+            left join team.user u on ti2.responsible_user = u.id or ti.responsible_user = u.id
+    ) x on htr.store_guid = x.external_part_org_id,
+    LATERAL (
+        select
+            public.getlist(
+                public.getacl(
+                    {{.PrivilegesFlag}},
+                    ({{PowerList .Guids}})::text
+                ),
+
+                ({{PowerList .Guids}})::text,
+
+                array[
+
+                    {{if .STORE_GUID}}
+                        {{N1V .STORE_GUID}}
+                    {{else}}
+                        '-1'
+                    {{end}}
+                    ,
+
+                    {{if .GROUP_STORE_GUID}}
+                        {{N1V .GROUP_STORE_GUID}}
+                    {{else}}
+                        '-1'
+                    {{end}}
+                ]
+            ) list,
+            public.getacl(
+                {{N1V .PrivilegesFlag}},
+                ({{PowerList .Guids}})::text
+            ) chmod
+    ) acl
+where
+    acl.chmod
+    and htr.is_delete = 0
+    and htr.state = 4
+
+    {{if and .START_TIME .END_TIME}}
+        and htr.business_day between {{N1V .START_TIME}}::date and {{N1V .END_TIME}}::date
+    {{end}}
+
+    and case acl.list
+        when 'true' then true
+        when 'false' then false
+        -- when 'false' then true  --debug
+        else (htr.store_guid = any(acl.list::text[]))
+    end
+
+    {{if .PAYMENT_TYPE_NAME}}
+        and htr.payment_type_name = any({{N1V .PAYMENT_TYPE_NAME}}::text[])
+    {{end}}
+
+group by
+    grouping sets((htr.store_guid,htr.business_day),())
+order by
+    case
+        when htr.store_guid isnull or htr.store_guid = '' or htr.store_guid = '合计' then 3
+        else 5
+    end,
+    5,6;
+
+{{end}}

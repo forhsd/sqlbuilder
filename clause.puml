@@ -1,0 +1,119 @@
+@startuml
+namespace clause {
+    class AggClause << (S,Aquamarine) >> {
+        + Aggs []FieldClause
+
+    }
+    class Builder << (S,Aquamarine) >> {
+        + SQLBuilders []DeepWrapper
+
+    }
+    class Column << (S,Aquamarine) >> {
+        + UniType string
+        + UniValue <font color=blue>interface</font>{}
+        + DisplayName string
+        + RawName string
+        + Alias string
+        + ColumnType string
+        + UseValidate bool
+        + RawColumn <font color=blue>interface</font>{}
+        + UniDependent <font color=blue>interface</font>{}
+        + RawDependent string
+
+    }
+    class DeepWrapper << (S,Aquamarine) >> {
+        + Deep int
+        + Sql SQLReference
+
+    }
+    class Expression << (S,Aquamarine) >> {
+        + Field FieldClause
+        + Call string
+        + Vars []<font color=blue>interface</font>{}
+
+    }
+    class FieldClause << (S,Aquamarine) >> {
+        + Column <font color=blue>interface</font>{}
+
+    }
+    class FromClause << (S,Aquamarine) >> {
+        + Table Table
+        + Join []Join
+
+    }
+    class GroupByClause << (S,Aquamarine) >> {
+        + GroupBys []FieldClause
+
+    }
+    class Join << (S,Aquamarine) >> {
+        + Left FieldClause
+        + Right FieldClause
+        + On LogicExpression
+        + Type JoinType
+
+    }
+    class LimitClause << (S,Aquamarine) >> {
+        + Limit *int
+        + Offset int
+
+        + SetLimit(newLimit *int) 
+
+    }
+    class Operator << (S,Aquamarine) >> {
+        + Op <font color=blue>interface</font>{}
+
+    }
+    class OrderBy << (S,Aquamarine) >> {
+        + Field FieldClause
+        + Order string
+
+    }
+    class OrderByClause << (S,Aquamarine) >> {
+        - orderBy []OrderBy
+
+    }
+    class SQLReference << (S,Aquamarine) >> {
+        + Select SelectClause
+        + From FromClause
+        + Where WhereClause
+        + Agg AggClause
+        + GroupBy GroupByClause
+        + OrderBy OrderByClause
+        + Limit LimitClause
+
+    }
+    class SelectClause << (S,Aquamarine) >> {
+        + Fields []FieldClause
+
+    }
+    class Table << (S,Aquamarine) >> {
+        + UniType string
+        + UniValue <font color=blue>interface</font>{}
+        + DisplayName string
+        + RawName string
+        + Alias string
+
+    }
+    class WhereClause << (S,Aquamarine) >> {
+        + Exprs []Expression
+
+    }
+    class clause.AggregationFunction << (T, #FF7700) >>  {
+    }
+    class clause.ArithExpression << (T, #FF7700) >>  {
+    }
+    class clause.JoinType << (T, #FF7700) >>  {
+    }
+    class clause.LogicExpression << (T, #FF7700) >>  {
+    }
+    class clause.compareExpression << (T, #FF7700) >>  {
+    }
+}
+
+
+"__builtin__.string" #.. "clause.AggregationFunction"
+"__builtin__.string" #.. "clause.ArithExpression"
+"__builtin__.string" #.. "clause.JoinType"
+"__builtin__.string" #.. "clause.LogicExpression"
+"__builtin__.string" #.. "clause.compareExpression"
+@enduml
