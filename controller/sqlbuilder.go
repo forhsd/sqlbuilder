@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/forhsd/logger"
 
 	"github.com/forhsd/sqlbuilder/common"
@@ -41,6 +43,12 @@ func GenerateHBQL(c *gin.Context) {
 		Data: result,
 	}
 
+	buff, _ := sonic.Marshal(resp)
+	r, _ := sonic.Marshal(req)
+
+	fmt.Printf("请求:%q\n", string(r))
+	fmt.Printf("响应:%s\n", string(buff))
+
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -72,6 +80,11 @@ func GenerateHBQLByProto(c *gin.Context) {
 		Code: http.StatusOK,
 		Data: result,
 	}
+
+	buff, _ := sonic.Marshal(resp)
+
+	fmt.Printf("请求:%q\n", string(bodyBuff))
+	fmt.Printf("响应:%s\n", string(buff))
 
 	c.JSON(http.StatusOK, resp)
 }
@@ -147,6 +160,11 @@ func AnalyzeTemplatesByProto(c *gin.Context) {
 		Data: templateMap,
 	}
 
+	buff, _ := sonic.Marshal(resp)
+
+	fmt.Printf("请求:%q\n", string(bodyBuff))
+	fmt.Printf("响应:%s\n", string(buff))
+
 	c.JSON(http.StatusOK, resp)
 
 }
@@ -176,6 +194,11 @@ func AnalyzeAdditionByProto(c *gin.Context) {
 		Code: http.StatusOK,
 		Data: additions,
 	}
+
+	buff, _ := sonic.Marshal(resp)
+
+	fmt.Printf("请求:%q\n", string(bodyBuff))
+	fmt.Printf("响应:%s\n", string(buff))
 
 	c.JSON(http.StatusOK, resp)
 
