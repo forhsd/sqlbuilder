@@ -18,13 +18,13 @@ func TestTemplateString(t *testing.T) {
 	// 1. 对于 string类型的值, 需要使用单引号包裹: `'%s'`
 	// 2. 数值类型直接使用: `%v`
 	// 3. 其他类型, : `'%v'`
-	data := map[string]interface{}{
+	data := map[string]any{
 		"STORE_GUID":        `'ffd10705-4449-4439-9d81-84bb08600e3c'`,
 		"GROUP_STORE_GUID":  `'4ee5f568-b096-44c6-8b58-4147ef36a3fb'`,
 		"START_TIME":        `'2024-07-05 17:17:37'`,
 		"END_TIME":          `'2024-09-05 17:17:37'`,
 		"PAYMENT_TYPE_NAME": `'交通银行'`,
-		"Guids":             []interface{}{"2203b12d-618a-4974-b09f-86ce3d35d26a", "362401e3-7876-4427-b467-8474a0efa03c"},
+		"Guids":             []any{"2203b12d-618a-4974-b09f-86ce3d35d26a", "362401e3-7876-4427-b467-8474a0efa03c"},
 		"PrivilegesFlag":    `'-2'`,
 	}
 

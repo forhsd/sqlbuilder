@@ -101,6 +101,7 @@ message SqlReference {
   // 不适用于过往 where-cond 条件之间逻辑处理, 要求明确指定逻辑分组, 不同逻辑只能是不同分组
   // 因此需要单独查询一次构造 where-group-cond
   optional LogicGroup logic_where = 9;
+  optional TopN top_n = 10;
 }
 
 // -----------------------------------------------   SqlReference 内部  -----------------------------------------------------
@@ -182,6 +183,12 @@ message Limit {
 }
 
 // -----------------------------------------------   以上 Limit  -----------------------------------------------------
+
+message TopN {
+  string field = 1;
+  string sort = 2; // asc desc
+  int32 num = 3;
+}
 
 message Column {
   string field = 1;

@@ -13,13 +13,13 @@ type MysqlModelBuilderSql struct {
 // 类型实现检查
 var _ ModelChainSqlBuilder = &MysqlModelBuilderSql{}
 
-// BuildBuildDialect mysql 对于接口实现
+// BuildDialect mysql 对于接口实现
 // 参数:
 //
 // 返回值:
 //   - 返回一个 xorm.Builder 对象
 //   - 异常
-func (m *MysqlModelBuilderSql) BuildBuildDialect(ctx *ModelBuilderCtx) (*xorm.Builder, error) {
+func (m *MysqlModelBuilderSql) BuildDialect(ctx *ModelBuilderCtx) (*xorm.Builder, error) {
 	logger.Debug("[模板方法模式]-[mysql] 构建方言...")
 	// xorm.Dialect(DialectDriverMap[ctx.Driver]), nil
 	return xorm.Dialect(xorm.MYSQL), nil

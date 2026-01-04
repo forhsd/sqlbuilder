@@ -15,15 +15,13 @@ import (
 
 // -----------------------------------------------   facade: 通过模型构建sql跨方言入口  --------------------------------------------
 
-func ChainSqlBuilder(
-	appendBuilder *xorm.Builder,
-	dialectBuilder *xorm.Builder,
-	sqlRef *pb.SqlReference,
-	ctx *ModelBuilderCtx) *xorm.Builder {
+func ChainSqlBuilder(req *pb.BuilderRequest, appendBuilder *xorm.Builder, dialectBuilder *xorm.Builder,
+	sqlRef *pb.SqlReference, ctx *ModelBuilderCtx) *xorm.Builder {
 	// builder(selects, from , as)
 	basicBuilder := buildChainBasic(appendBuilder, dialectBuilder, sqlRef, ctx)
+
 	// 调用BuildOther方法处理其他逻辑
-	builder := buildChainOther(basicBuilder, sqlRef, ctx)
+	builder := buildChainOther(req, basicBuilder, sqlRef, ctx)
 	return builder
 }
 
@@ -53,9 +51,9 @@ func buildChainBasic(
 
 // 抽象方法: 构建SQL其他关键字内容，具体实现由子类提供
 func buildChainOther(
-	builder *xorm.Builder,
-	sqlRef *pb.SqlReference,
-	ctx *ModelBuilderCtx) *xorm.Builder {
+	req *pb.BuilderRequest, builder *xorm.Builder,
+	sqlRef *pb.SqlReference, ctx *ModelBuilderCtx) *xorm.Builder {
+
 	logger.Debug("[模板方法模式]- 实现: 构建 builder 其他内容...")
 
 	// 判断是否组装 Join
@@ -82,6 +80,9 @@ func buildChainOther(
 	if sqlRef.Limit != nil {
 		builder = buildLimitProto(builder, sqlRef)
 	}
+
+	// 构建TopN
+	builder = buildTopNProto(req, builder, sqlRef)
 
 	return builder
 }
@@ -270,7 +271,7 @@ func calAppendTextByColumnAsByProto(format string, column *pb.Column, userAs boo
 }
 
 // 获取Expression对应的格式化字符串
-func getExpressionFuncFormatByProto(expression *pb.Expression, ctx *ModelBuilderCtx, tmpVars2Strings []interface{}) (string, bool) {
+func getExpressionFuncFormatByProto(expression *pb.Expression, ctx *ModelBuilderCtx, tmpVars2Strings []any) (string, bool) {
 	// 动态构建 Expression 的 format
 	var finalFormat string
 
@@ -297,7 +298,7 @@ func getExpressionFuncFormatByProto(expression *pb.Expression, ctx *ModelBuilder
 // 返回值:
 //   - 驱动对应的 fmt 字符串
 //   - 当前层级表达式是否是字面量
-func expressionFuncNoAsFormat(expression *pb.Expression, tmpVars2Strings []interface{}) (string, bool) {
+func expressionFuncNoAsFormat(expression *pb.Expression, tmpVars2Strings []any) (string, bool) {
 	callType := expression.CallType
 	switch callType {
 	case pb.CallType_CALL_TYPE_AGG:
@@ -321,10 +322,10 @@ func expressionFuncNoAsFormat(expression *pb.Expression, tmpVars2Strings []inter
 }
 
 // 构建Expression表达式占位符所需的字符串填充
-func calExpressionVarsFormatStringsByProto(expr *pb.Expression, ctx *ModelBuilderCtx) []interface{} {
+func calExpressionVarsFormatStringsByProto(expr *pb.Expression, ctx *ModelBuilderCtx) []any {
 	vars := expr.Vars
 	// 表达式参数: int, string, clause.Column
-	var expressions []interface{}
+	var expressions []any
 
 	// 1. 字面量只需要填充别名
 	// 2. 如果函数是 count1/now, 只用填充别名
@@ -388,7 +389,7 @@ func calExpressionVarsFormatStringsByProto(expr *pb.Expression, ctx *ModelBuilde
 
 	// 如果是可变参数函数，将参数转换为一个字符串
 	if clause.IsVariadicArgsFunc(expr.Call) {
-		expressions = []interface{}{variadicArgsFuncVars2oneVar(expressions, varIndexTypeMap)}
+		expressions = []any{variadicArgsFuncVars2oneVar(expressions, varIndexTypeMap)}
 	}
 
 	if expr.UseAs {
@@ -801,7 +802,7 @@ func extraConditionOpField(cond *pb.Condition, ctx *ModelBuilderCtx) string {
 	return processMixFieldItemByProto(cond.GetField(), ctx)
 }
 
-func ExtraArgItemValue(item *pb.BasicData) interface{} {
+func ExtraArgItemValue(item *pb.BasicData) any {
 	switch elem := item.GetData().(type) {
 	case *pb.BasicData_StrVal:
 		return elem.StrVal
@@ -817,8 +818,8 @@ func ExtraArgItemValue(item *pb.BasicData) interface{} {
 	return ""
 }
 
-func extraConditionArgsSlice(cond *pb.Condition) interface{} {
-	var inArgs []interface{}
+func extraConditionArgsSlice(cond *pb.Condition) any {
+	var inArgs []any
 	for _, data := range cond.GetArgs() {
 		switch d := data.GetData().(type) {
 		case *pb.BasicData_IntVal:
@@ -860,6 +861,34 @@ func buildLimitProto(builder *xorm.Builder, sqlRef *pb.SqlReference) *xorm.Build
 		return builder
 	}
 	return builder.Limit(int(limit.LimitN), int(limit.Offset))
+}
+
+// 构建TopN
+func buildTopNProto(req *pb.BuilderRequest, builder *xorm.Builder, sqlRef *pb.SqlReference) *xorm.Builder {
+	if sqlRef.TopN == nil {
+		return builder
+	}
+
+	sql, _ := builder.ToBoundSQL()
+
+	fmt.Println(sql)
+
+	// sql, _ = builder.Select("business_day", "dinneramount").From(builder).ToBoundSQL()
+
+	selas := ExtractSelectAlias(sqlRef.Select)
+	order := ExtractOrderAlias(sqlRef.OrderBy)
+
+	sub := Dialect(req)
+	top := sqlRef.GetTopN()
+	id := fmt.Sprintf("ROW_NUMBER() OVER(ORDER BY `%s` %s) ___filter_xfjwi__rid", top.GetField(), top.GetSort())
+	sub = sub.Select("*", id).From(builder, "x")
+
+	out := Dialect(req).Select(selas...).From(sub, "x").Where(xorm.Lte{"___filter_xfjwi__rid": top.GetNum()}).OrderBy(strings.Join(order, ","))
+	sql, err := out.ToBoundSQL()
+
+	fmt.Println(sql, err)
+
+	return builder
 }
 
 // 构建 sql.group-by

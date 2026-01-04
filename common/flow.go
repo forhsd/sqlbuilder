@@ -38,15 +38,15 @@ func BuildTemplateSqlByJson(request clause.BuilderRequest) (string, error) {
 }
 
 // BuildSqlByModelProto 使用 proto 解决 http 传输联合类型接收为 map 的元组类型擦除问题
-func BuildSqlByModelProto(request *pb.BuilderRequest) (string, error) {
+func BuildSqlByModelProto(req *pb.BuilderRequest) (string, error) {
 	// 根据方言创建facade
-	builderInst, err := facade.ModelChainBuilderFactory(request.Driver)
+	builderInst, err := facade.ModelChainBuilderFactory(req.Driver)
 	if err != nil {
 		return "", err
 	}
 	facadeInstance := facade.NewModelChainSqlBuilderFacadeInstance(builderInst)
 	// 构建 xormBuilder -> sql
-	boundSQL, err := facadeInstance.Execute(request)
+	boundSQL, err := facadeInstance.Execute(req)
 	if err != nil {
 		return "", err
 	}

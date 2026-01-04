@@ -88,7 +88,7 @@ func convert2BasicArgs(sqlRef clause.SQLReference) ([]string, string, string) {
 	return selects, tableSchema, fmt.Sprintf(clause.PGStringLiteralSafe, fromClause.TableAlias)
 }
 
-func extraColumnOrExpressionStrings(mixClause []interface{}) []string {
+func extraColumnOrExpressionStrings(mixClause []any) []string {
 	var selects []string
 	// 走http, case Column 和 case Expression 分支失效,
 	for _, mixItem := range mixClause {

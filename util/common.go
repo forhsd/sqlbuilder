@@ -36,7 +36,7 @@ func (Marshal) Deserialize(serialized []byte, target interface{}) error {
 	return nil
 }
 
-func Ternary(condition bool, trueVal, falseVal interface{}) interface{} {
+func Ternary(condition bool, trueVal, falseVal any) any {
 	if condition {
 		return trueVal
 	}

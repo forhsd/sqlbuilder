@@ -94,6 +94,8 @@ const (
 	CallDorisDateDiffDay   InnerFunc = "doris_datediff_day"
 	CallDorisDateDiffMonth InnerFunc = "doris_datediff_month"
 	CallDorisDateDiffYear  InnerFunc = "doris_datediff_year"
+
+	CallDorisDateWeekDay InnerFunc = "iso_week_day"
 )
 
 // 通用 format
@@ -203,6 +205,9 @@ const (
 	DorisDateDiffDayFormat   = `(-DATEDIFF(date_trunc(%s, 'day'), date_trunc(%s, 'day')))`
 	DorisDateDiffMonthFormat = `TIMESTAMPDIFF(MONTH, date_trunc(%s, 'month'), date_trunc(%s, 'month'))`
 	DorisDateDiffYearFormat  = `TIMESTAMPDIFF(YEAR, date_trunc(%s, 'year'), date_trunc(%s, 'year'))`
+
+	// doris weekday
+	DorisDateWeekDayFirnat = `WEEKDAY(%s) + 1`
 )
 
 // InnerFuncFormatMap 内置函数名称和SQL片段 映射
@@ -280,6 +285,7 @@ var (
 		CallDorisDateDiffDay:   DorisDateDiffDayFormat,
 		CallDorisDateDiffMonth: DorisDateDiffMonthFormat,
 		CallDorisDateDiffYear:  DorisDateDiffYearFormat,
+		CallDorisDateWeekDay:   DorisDateWeekDayFirnat,
 	}
 
 	// as 不再维护， 通过是否使用别名决定是否在 format 之后加别名

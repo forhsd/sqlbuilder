@@ -3,11 +3,14 @@
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"sort"
 	"text/template"
 	"text/template/parse"
 
+	pb "github.com/forhsd/sqlbuilder/gen/proto"
 	"github.com/forhsd/sqlbuilder/util"
+	xorm "xorm.io/builder"
 )
 
 // -------------------------------------------  提取变量 ----------------------------------------------
@@ -145,4 +148,56 @@ func ExtractAdditionFromTemplate(
 	return &NativeSqlHeader{
 		Specs: specifications,
 	}, nil
+}
+
+// 构建方言
+func Dialect(req *pb.BuilderRequest) *xorm.Builder {
+	switch req.Driver {
+	case pb.Driver_DRIVER_DORIS:
+		return xorm.Dialect(xorm.MYSQL)
+	case pb.Driver_DRIVER_MYSQL:
+		return xorm.Dialect(xorm.MYSQL)
+	case pb.Driver_DRIVER_POSTGRES:
+		return xorm.Dialect(xorm.POSTGRES)
+	default:
+		panic(errors.New("未适配的数据库"))
+	}
+	// return nil
+}
+
+// 提取SELECT别名
+func ExtractSelectAlias(sel []*pb.MixField) (alias []string) {
+
+	for _, s := range sel {
+		var as string
+		switch s.GetMix().(type) {
+		case *pb.MixField_Column:
+			as = s.GetColumn().GetAlias()
+		case *pb.MixField_Expression:
+			as = s.GetExpression().GetCallAs()
+		case *pb.MixField_CaseWhen:
+			as = s.GetCaseWhen().GetAlias()
+		}
+		alias = append(alias, as)
+	}
+	return
+}
+
+// 提取ORDER别名
+func ExtractOrderAlias(order []*pb.OrderBy) (alias []string) {
+	for _, o := range order {
+		var as string
+		dep := o.GetDependent()
+		switch dep.GetMix().(type) {
+		case *pb.MixField_Column:
+			as = dep.GetColumn().GetAlias()
+		case *pb.MixField_Expression:
+			as = dep.GetExpression().GetCallAs()
+		case *pb.MixField_CaseWhen:
+			as = dep.GetCaseWhen().GetAlias()
+		}
+		as = as + " " + o.Order
+		alias = append(alias, as)
+	}
+	return
 }

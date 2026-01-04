@@ -137,23 +137,16 @@ func ModelChainBuilderFactory(driver pb.Driver) (ModelChainSqlBuilder, error) {
 //   - 返回 sql
 //   - 异常
 type ModelChainSqlBuilder interface {
-	BuildBuildDialect(ctx *ModelBuilderCtx) (*xorm.Builder, error)
-
-	BuildChainSql(
-		appendBuilder *xorm.Builder,
-		dialectBuilder *xorm.Builder,
-		sqlRef *pb.SqlReference,
-		ctx *ModelBuilderCtx) *xorm.Builder
+	BuildDialect(ctx *ModelBuilderCtx) (*xorm.Builder, error)
+	BuildChainSql(req *pb.BuilderRequest, appendBuilder *xorm.Builder, dialectBuilder *xorm.Builder, sqlRef *pb.SqlReference, ctx *ModelBuilderCtx) *xorm.Builder
 }
 
 type DefaultChainBuilder struct{}
 
-func (c *DefaultChainBuilder) BuildChainSql(
-	appendBuilder *xorm.Builder,
-	dialectBuilder *xorm.Builder,
-	sqlRef *pb.SqlReference,
-	ctx *ModelBuilderCtx) *xorm.Builder {
-	return ChainSqlBuilder(appendBuilder, dialectBuilder, sqlRef, ctx)
+func (c *DefaultChainBuilder) BuildChainSql(req *pb.BuilderRequest,
+	appendBuilder *xorm.Builder, dialectBuilder *xorm.Builder,
+	sqlRef *pb.SqlReference, ctx *ModelBuilderCtx) *xorm.Builder {
+	return ChainSqlBuilder(req, appendBuilder, dialectBuilder, sqlRef, ctx)
 }
 
 // AbstractModelBuilderFacade 定义抽象Facade，提供模板方法模式的基础实现
@@ -178,14 +171,14 @@ func NewModelChainSqlBuilderFacadeInstance(builderSql ModelChainSqlBuilder) *Abs
 // 返回值:
 //   - 返回 真实可执行的SQL
 //   - 异常
-func (abs *AbstractModelBuilderFacade) Execute(request *pb.BuilderRequest) (string, error) {
-	builders := request.Builders
-	ctx := abs.BuildCtx(request)
+func (abs *AbstractModelBuilderFacade) Execute(req *pb.BuilderRequest) (string, error) {
+	builders := req.Builders
+	ctx := abs.BuildCtx(req)
 	var appendBuilder *xorm.Builder
 
 	// 循环 append *xorm.Builder 内容
 	for _, ref := range builders {
-		xormBuilder, err := abs.processChainBuilder(appendBuilder, ref, ctx)
+		xormBuilder, err := abs.processChainBuilder(req, appendBuilder, ref, ctx)
 		if err != nil {
 			return "", err
 		}
@@ -215,14 +208,14 @@ func (abs *AbstractModelBuilderFacade) Execute(request *pb.BuilderRequest) (stri
 //
 // 返回值:
 //   - 返回 *ModelBuilderCtx
-func (abs *AbstractModelBuilderFacade) BuildCtx(request *pb.BuilderRequest) *ModelBuilderCtx {
+func (abs *AbstractModelBuilderFacade) BuildCtx(req *pb.BuilderRequest) *ModelBuilderCtx {
 	return &ModelBuilderCtx{
-		String1LiteralSafeFormat:              String1LiteralSafeMap[request.Driver],
-		String2LiteralSafeFormat:              String2LiteralSafeMap[request.Driver],
-		String2LiteralAsSafeFormat:            String2LiteralSafeAsMap[request.Driver],
-		AsFormatLiteralSafeFormat:             AsFormatLiteralSafeMap[request.Driver],
-		TableLiteralAsFormatLiteralSafeFormat: TableLiteralAsFormatLiteralSafeMap[request.Driver],
-		Driver:                                DriverMap[request.Driver],
+		String1LiteralSafeFormat:              String1LiteralSafeMap[req.Driver],
+		String2LiteralSafeFormat:              String2LiteralSafeMap[req.Driver],
+		String2LiteralAsSafeFormat:            String2LiteralSafeAsMap[req.Driver],
+		AsFormatLiteralSafeFormat:             AsFormatLiteralSafeMap[req.Driver],
+		TableLiteralAsFormatLiteralSafeFormat: TableLiteralAsFormatLiteralSafeMap[req.Driver],
+		Driver:                                DriverMap[req.Driver],
 	}
 }
 
@@ -235,20 +228,18 @@ func (abs *AbstractModelBuilderFacade) BuildCtx(request *pb.BuilderRequest) *Mod
 //   - 返回 *xorm.Builder
 //   - 异常
 func (abs *AbstractModelBuilderFacade) processChainBuilder(
-	appendBuilder *xorm.Builder,
-	builderRef *pb.DeepWrapper,
-	ctx *ModelBuilderCtx,
-) (*xorm.Builder, error) {
+	req *pb.BuilderRequest, appendBuilder *xorm.Builder,
+	builderRef *pb.DeepWrapper, ctx *ModelBuilderCtx) (*xorm.Builder, error) {
 	// 上游确定是 model 构造器
 	sqlRef := builderRef.Sql.GetModel()
 	// 选择方言
-	dialectBuilder, err := abs.builderSql.BuildBuildDialect(ctx)
+	dialectBuilder, err := abs.builderSql.BuildDialect(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// 链式构造器
-	builder := ChainSqlBuilder(appendBuilder, dialectBuilder, sqlRef, ctx)
+	builder := ChainSqlBuilder(req, appendBuilder, dialectBuilder, sqlRef, ctx)
 
 	return builder, nil
 }

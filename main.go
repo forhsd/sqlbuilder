@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+
 	// 加载配置
 	config.LoadConfig()
 

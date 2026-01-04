@@ -587,6 +587,9 @@
         "logic_where": {
           "$ref": "#/definitions/protoLogicGroup",
           "title": "新结构(where 递归树表达), 优先级\u003eMixWhere(2)\n不适用于过往 where-cond 条件之间逻辑处理, 要求明确指定逻辑分组, 不同逻辑只能是不同分组\n因此需要单独查询一次构造 where-group-cond"
+        },
+        "top_n": {
+          "$ref": "#/definitions/protoTopN"
         }
       }
     },
@@ -648,6 +651,22 @@
         },
         "val_items": {
           "$ref": "#/definitions/protoBasicDataArr"
+        }
+      }
+    },
+    "protoTopN": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "sort": {
+          "type": "string",
+          "title": "asc desc"
+        },
+        "num": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

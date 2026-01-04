@@ -53,15 +53,15 @@ type SQLReference struct {
 	From Table  `json:"from"`
 	Join []Join `json:"join"`
 	// 类型断言: Condition 或者 Expression (返回值是bool的函数)
-	Where []interface{} `json:"where"`
+	Where []any `json:"where"`
 	// 类型断言: Column 或者 Expression
-	GroupBy []interface{} `json:"groupBy"`
+	GroupBy []any `json:"groupBy"`
 	// Aggregation 会加入 Select 片段
 	Aggregation []Expression `json:"aggregation"`
 	// 类型断言: Column 或者 Expression
-	Select  []interface{} `json:"select"`
-	OrderBy []OrderBy     `json:"orderBy"`
-	Limit   LimitClause   `json:"limit"`
+	Select  []any       `json:"select"`
+	OrderBy []OrderBy   `json:"orderBy"`
+	Limit   LimitClause `json:"limit"`
 }
 
 func (i BuilderStrategy) EnType() string {
