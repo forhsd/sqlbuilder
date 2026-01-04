@@ -11,7 +11,7 @@ import (
 // CaseWhen 用于动态构建 CASE WHEN 表达式, case 列 when 相当于 case when 等值条件
 type CaseWhen struct {
 	Conditions []CaseWhenCondition
-	ElseValue  interface{}
+	ElseValue  any
 	// 表示 CASE 的列名as
 	Alias string
 	UseAs bool
@@ -19,8 +19,8 @@ type CaseWhen struct {
 
 // CaseWhenCondition 表示1行 case-when-then 语句
 type CaseWhenCondition struct {
-	When xorm.Cond   // 表示条件的表达式
-	Then interface{} // 条件满足时返回的值
+	When xorm.Cond // 表示条件的表达式
+	Then any       // 条件满足时返回的值
 }
 
 // BuilderCaseWhenFragment 实现 case when 片段
@@ -56,7 +56,7 @@ func (cw *CaseWhen) BuilderCaseWhenFragment(driver Driver) string {
 	return builder.String()
 }
 
-func writeElseValue(elseValue interface{}, builder *strings.Builder) {
+func writeElseValue(elseValue any, builder *strings.Builder) {
 	builder.WriteString(" ELSE ")
 	switch v := elseValue.(type) {
 	case string:

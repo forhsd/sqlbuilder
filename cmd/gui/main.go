@@ -4,17 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"image/color"
+	"reflect"
+	"strconv"
+	"strings"
+	"text/template"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"image/color"
-	"reflect"
-	"strconv"
-	"strings"
-	"text/template"
 )
 
 const (
@@ -51,7 +52,7 @@ func main() {
 	w.Resize(fyne.NewSize(1024, 768))
 
 	// 存储键值对的 map
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 
 	// 输入框组件
 	keyEntry := widget.NewEntry() // 键
@@ -102,7 +103,7 @@ func main() {
 
 	// 清空按钮
 	clearButton := widget.NewButton("清空", func() {
-		data = make(map[string]interface{})
+		data = make(map[string]any)
 		updateDataList()
 	})
 	clearButton.Importance = widget.DangerImportance
@@ -181,7 +182,7 @@ func main() {
 }
 
 // 解析输入内容（根据选择的类型）
-func parseInput(input, valType string) interface{} {
+func parseInput(input, valType string) any {
 	input = strings.TrimSpace(input)
 
 	switch valType {
@@ -201,7 +202,7 @@ func parseInput(input, valType string) interface{} {
 		}
 		return nums
 	case "字符串数组":
-		var strArr []interface{}
+		var strArr []any
 		parts := strings.Split(strings.Trim(input, "[]"), ",")
 		for i := range parts {
 			parts[i] = strings.TrimSpace(parts[i])
@@ -212,7 +213,7 @@ func parseInput(input, valType string) interface{} {
 	return input
 }
 
-func processTemplate(tmplStr string, data map[string]interface{}) string {
+func processTemplate(tmplStr string, data map[string]any) string {
 	tmpl, err := template.New("root").Funcs(InjectFunc()).Parse(tmplStr)
 	if err != nil {
 		return "模板解析错误: " + err.Error()
@@ -231,8 +232,8 @@ func processTemplate(tmplStr string, data map[string]interface{}) string {
 	return sql
 }
 
-func getSlaveTemplate(tmpl *template.Template, data map[string]interface{}) map[string]interface{} {
-	slaveMap := make(map[string]interface{})
+func getSlaveTemplate(tmpl *template.Template, data map[string]any) map[string]any {
+	slaveMap := make(map[string]any)
 	for _, t := range tmpl.Templates() {
 		// 当前模板名称
 		tmplName := t.Name()
@@ -251,9 +252,9 @@ func getSlaveTemplate(tmpl *template.Template, data map[string]interface{}) map[
 	return slaveMap
 }
 
-func unionMap(m1, m2 map[string]interface{}) map[string]interface{} {
+func unionMap(m1, m2 map[string]any) map[string]any {
 	// 思路：先把其中一个map 放到新的对象中，把m2中key不存在于本对象中合并即可
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for k, v := range m1 {
 		result[k] = v
 	}
@@ -300,7 +301,7 @@ func InjectFunc() template.FuncMap {
 	}
 }
 
-func PowerList(guids []interface{}) string {
+func PowerList(guids []any) string {
 	var tempArr []string
 	for i := range guids {
 		val, ok := guids[i].(string)
@@ -325,7 +326,7 @@ func PowerListByString(guids []string) string {
 	return oneStr
 }
 
-func DefaultValue(expect interface{}, defaultVal interface{}) interface{} {
+func DefaultValue(expect any, defaultVal any) any {
 	if expect == nil {
 		return defaultVal
 	}
@@ -341,7 +342,7 @@ func DefaultValue(expect interface{}, defaultVal interface{}) interface{} {
 			return defaultVal
 		}
 	default:
-		// 处理 interface{} 类型，判断是否为零值
+		// 处理 any 类型，判断是否为零值
 		v := reflect.ValueOf(expect)
 		if v.IsZero() {
 			return defaultVal
@@ -356,7 +357,7 @@ func DefaultValue(expect interface{}, defaultVal interface{}) interface{} {
 //
 // 返回值:
 //   - 规范化(SQL)参数值
-func Normalize1Val(arg interface{}) string {
+func Normalize1Val(arg any) string {
 	if nil == arg {
 		return ""
 	}
@@ -377,7 +378,7 @@ func Normalize1Val(arg interface{}) string {
 //
 // 返回值:
 //   - 规范化(SQL)参数值
-func Normalize1Arr(arr interface{}) string {
+func Normalize1Arr(arr any) string {
 
 	v := reflect.ValueOf(arr)
 	if v.Kind() != reflect.Slice {
@@ -397,18 +398,18 @@ func ArrConvert(values ...string) []string {
 	return values
 }
 
-func DictConvert(keysAndValues ...interface{}) map[string]interface{} {
+func DictConvert(keysAndValues ...any) map[string]any {
 	if len(keysAndValues)%2 != 0 {
 		return nil
 	}
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	for i := 0; i < len(keysAndValues); i += 2 {
 		m[keysAndValues[i].(string)] = keysAndValues[i+1]
 	}
 	return m
 }
 
-func JsonConvert(data interface{}) string {
+func JsonConvert(data any) string {
 	b, _ := json.Marshal(data)
 	return string(b)
 }

@@ -65,8 +65,9 @@ enum CallType {
 
 message BuilderRequest {
   repeated DeepWrapper builders = 1;
-  Driver driver = 2;
-  BuilderStrategy strategy = 3;
+  optional TopN top_n = 2;
+  Driver driver = 3;
+  BuilderStrategy strategy = 4;
 }
 
 message DeepWrapper {
@@ -101,7 +102,6 @@ message SqlReference {
   // 不适用于过往 where-cond 条件之间逻辑处理, 要求明确指定逻辑分组, 不同逻辑只能是不同分组
   // 因此需要单独查询一次构造 where-group-cond
   optional LogicGroup logic_where = 9;
-  optional TopN top_n = 10;
 }
 
 // -----------------------------------------------   SqlReference 内部  -----------------------------------------------------
@@ -185,9 +185,15 @@ message Limit {
 // -----------------------------------------------   以上 Limit  -----------------------------------------------------
 
 message TopN {
-  string field = 1;
-  string sort = 2; // asc desc
-  int32 num = 3;
+  repeated string select_alias = 1;
+  Sort top_order = 2; // over(排序)
+  repeated Sort outer_order = 3; // 外层排序
+  int32 num = 4;
+}
+
+message Sort {
+  string alias = 1;
+  string order = 2; // asc desc
 }
 
 message Column {

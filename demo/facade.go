@@ -2,11 +2,13 @@ package demo
 
 import (
 	"database/sql"
+
 	"github.com/forhsd/logger"
+
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 func Gen(db *gorm.DB, limitN int) string {
@@ -113,7 +115,7 @@ func GenProductSql(db *gorm.DB, category string) string {
 	return nativeSql
 }
 
-func GenProduct(db *gorm.DB, category string) []map[string]interface{} {
+func GenProduct(db *gorm.DB, category string) []map[string]any {
 	logger.Debug("[GenProduct] category: %s", category)
 
 	nativeSql := GenProductSql(db, category)
@@ -130,10 +132,10 @@ func GenProduct(db *gorm.DB, category string) []map[string]interface{} {
 		}
 	}(rows)
 
-	var result []map[string]interface{}
+	var result []map[string]any
 
 	for rows.Next() {
-		var rowData map[string]interface{}
+		var rowData map[string]any
 		err := db.ScanRows(rows, &rowData)
 		if err != nil {
 			logger.Error("[GenProduct] 写入result对象失败: %s", err)

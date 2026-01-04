@@ -45,7 +45,7 @@ func InjectFunc() template.FuncMap {
 	}
 }
 
-func PowerList(guids []interface{}) string {
+func PowerList(guids []any) string {
 	var tempArr []string
 	for i := range guids {
 		val, ok := guids[i].(string)
@@ -70,7 +70,7 @@ func PowerListByString(guids []string) string {
 	return oneStr
 }
 
-func DefaultValue(expect interface{}, defaultVal interface{}) interface{} {
+func DefaultValue(expect any, defaultVal any) any {
 	if expect == nil {
 		return defaultVal
 	}
@@ -86,7 +86,7 @@ func DefaultValue(expect interface{}, defaultVal interface{}) interface{} {
 			return defaultVal
 		}
 	default:
-		// 处理 interface{} 类型，判断是否为零值
+		// 处理 any 类型，判断是否为零值
 		v := reflect.ValueOf(expect)
 		if v.IsZero() {
 			return defaultVal
@@ -101,7 +101,7 @@ func DefaultValue(expect interface{}, defaultVal interface{}) interface{} {
 //
 // 返回值:
 //   - 规范化(SQL)参数值
-func Normalize1Val(arg interface{}) string {
+func Normalize1Val(arg any) string {
 	if nil == arg {
 		return ""
 	}
@@ -122,7 +122,7 @@ func Normalize1Val(arg interface{}) string {
 //
 // 返回值:
 //   - 规范化(SQL)参数值
-func Normalize1Arr(arr interface{}) string {
+func Normalize1Arr(arr any) string {
 
 	v := reflect.ValueOf(arr)
 	if v.Kind() != reflect.Slice {
@@ -142,26 +142,26 @@ func ArrConvert(values ...string) []string {
 	return values
 }
 
-func DictConvert(keysAndValues ...interface{}) map[string]interface{} {
+func DictConvert(keysAndValues ...any) map[string]any {
 	if len(keysAndValues)%2 != 0 {
 		return nil
 	}
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	for i := 0; i < len(keysAndValues); i += 2 {
 		m[keysAndValues[i].(string)] = keysAndValues[i+1]
 	}
 	return m
 }
 
-func JsonConvert(data interface{}) string {
+func JsonConvert(data any) string {
 	b, _ := json.Marshal(data)
 	return string(b)
 }
 
 // ----------------------------------------------------------------------------------------
 
-func NormalizeValue(args map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
+func NormalizeValue(args map[string]any) map[string]any {
+	result := make(map[string]any)
 
 	for k, v := range args {
 		val := DataFormat(v)
@@ -171,7 +171,7 @@ func NormalizeValue(args map[string]interface{}) map[string]interface{} {
 	return result
 }
 
-func DataFormat(v interface{}) interface{} {
+func DataFormat(v any) any {
 	// 1. 对于 string类型的值v, 需要使用单引号包裹: `'%s'`
 	// 2. 数值类型直接使用: `%v`
 	// 3. 其他类型, : `'%v'`
@@ -186,7 +186,7 @@ func DataFormat(v interface{}) interface{} {
 	}
 }
 
-func IsArray(v interface{}) bool {
+func IsArray(v any) bool {
 	t := reflect.TypeOf(v)
 	if t.Kind() == reflect.Slice || t.Kind() == reflect.Array {
 		return true

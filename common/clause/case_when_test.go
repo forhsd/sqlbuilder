@@ -57,7 +57,7 @@ func TestIsVariadicArgsFunc(t *testing.T) {
 	assert.EqualValues(t, false, IsVariadicArgsFunc("sum"))
 
 	// 参数>占位符: qqq add ccc%!(EXTRA string=ddd)
-	vars := []interface{}{"qqq", "ccc", "ddd"}
+	vars := []any{"qqq", "ccc", "ddd"}
 	fmt.Println(fmt.Sprintf(`%s add %s`, vars...))
 	fmt.Println(CalArithFormat("+", 3))
 	fmt.Println(CalArithFormatWithBuilder("+", 3))

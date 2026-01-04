@@ -112,9 +112,9 @@ func extraColumnOrExpressionStrings(mixClause []any) []string {
 		//	//		format,
 		//	//		vars2Strings...))
 		//	selects = append(selects, formatExpression(item))
-		//case map[string]interface{}:
-		//	// http接收后会擦除元组内元素类型都变成map[string]interface{}导致断言失效, 因此不能用 .(type)
-		//	//anyMap := mixItem.(map[string]interface{})
+		//case map[string]any:
+		//	// http接收后会擦除元组内元素类型都变成map[string]any导致断言失效, 因此不能用 .(type)
+		//	//anyMap := mixItem.(map[string]any)
 		//	//identify := identifyTupleItem(anyMap)
 		//	//switch identify.(type) {
 		//	//case clause.Column:
@@ -148,7 +148,7 @@ func extraColumnOrExpressionStrings(mixClause []any) []string {
 	return selects
 }
 
-func processMixFieldItem(mixItem interface{}) string {
+func processMixFieldItem(mixItem any) string {
 	switch item := mixItem.(type) {
 	case clause.Column:
 		format := util.Ternary(item.UseAs, clause.PGTableColumnAs, clause.PGTableColumn).(string)
@@ -157,8 +157,8 @@ func processMixFieldItem(mixItem interface{}) string {
 	case clause.Expression:
 		return formatExpression(item)
 
-	case map[string]interface{}:
-		// http接收后会擦除元组内元素类型都变成map[string]interface{}导致断言失效, 因此不能用 .(type)
+	case map[string]any:
+		// http接收后会擦除元组内元素类型都变成map[string]any导致断言失效, 因此不能用 .(type)
 		return processMapItem(item)
 
 	default:
@@ -176,7 +176,7 @@ func formatExpression(expression clause.Expression) string {
 	return fmt.Sprintf(format, vars2Strings...)
 }
 
-func processMapItem(anyMap map[string]interface{}) string {
+func processMapItem(anyMap map[string]any) string {
 	identify := identifyTupleItem(anyMap)
 	switch identifiedItem := identify.(type) {
 	case clause.Column:
@@ -196,9 +196,9 @@ func calAppendTextByColumnAs(format string, column clause.Column, userAs bool, a
 	return fmt.Sprintf(format, column.Table, column.Field)
 }
 
-// identifyTupleItem http接收后会擦除元组内元素类型都变成map[string]interface{}导致断言失效, 因此不能用 .(type)
+// identifyTupleItem http接收后会擦除元组内元素类型都变成map[string]any导致断言失效, 因此不能用 .(type)
 // 通过特殊字段断言类型, 不增加一层是因为不好元组元素索引
-func identifyTupleItem(item map[string]interface{}) interface{} {
+func identifyTupleItem(item map[string]any) any {
 	// Column
 	if value := item["field"]; value != nil {
 		var column clause.Column
@@ -222,7 +222,7 @@ func identifyTupleItem(item map[string]interface{}) interface{} {
 	return nil
 }
 
-func mapToStruct(data map[string]interface{}, out interface{}) error {
+func mapToStruct(data map[string]any, out any) error {
 	// 将 map 转换为 JSON 字符串
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -261,10 +261,10 @@ func getExpressionFuncFormat(expression clause.Expression) string {
 	}
 }
 
-func calExpressionVarsFormatStrings(expr clause.Expression) []interface{} {
+func calExpressionVarsFormatStrings(expr clause.Expression) []any {
 	vars := expr.Vars
 	// 表达式参数: int, string, clause.Column
-	var expressions []interface{}
+	var expressions []any
 	for _, varItem := range vars {
 		switch item := varItem.(type) {
 		case clause.Column:
@@ -280,9 +280,9 @@ func calExpressionVarsFormatStrings(expr clause.Expression) []interface{} {
 		case int, int8, int16, int32, int64:
 			exprInt := varItem.(int)
 			expressions = append(expressions, fmt.Sprintf(clause.AnyLiteral, exprInt))
-		case map[string]interface{}:
-			// http接收后会擦除元组内元素类型都变成map[string]interface{}导致断言失效, 因此不能用 .(type)
-			//anyMap := varItem.(map[string]interface{})
+		case map[string]any:
+			// http接收后会擦除元组内元素类型都变成map[string]any导致断言失效, 因此不能用 .(type)
+			//anyMap := varItem.(map[string]any)
 			//identify := identifyTupleItem(anyMap)
 			//switch identify.(type) {
 			//case clause.Column:
@@ -304,7 +304,7 @@ func calExpressionVarsFormatStrings(expr clause.Expression) []interface{} {
 	return expressions
 }
 
-func processVarsMapItem(anyMap map[string]interface{}, callAs string) interface{} {
+func processVarsMapItem(anyMap map[string]any, callAs string) any {
 	identify := identifyTupleItem(anyMap)
 	switch identifiedItem := identify.(type) {
 	case clause.Column:

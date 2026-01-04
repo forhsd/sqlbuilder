@@ -1,6 +1,11 @@
 package clause
 
+import (
+	pb "github.com/forhsd/sqlbuilder/gen/proto"
+)
+
 type BuilderStrategy int
+
 type Driver int
 
 const (
@@ -18,9 +23,9 @@ const (
 )
 
 const (
-	DriverPostgres Driver = iota
-	DriverMysql
-	DriverDoris
+	DriverPostgres Driver = Driver(pb.Driver_DRIVER_POSTGRES)
+	DriverMysql    Driver = Driver(pb.Driver_DRIVER_MYSQL)
+	DriverDoris    Driver = Driver(pb.Driver_DRIVER_DORIS)
 )
 
 var (
@@ -82,20 +87,20 @@ func BuilderStrategyEnumType(index BuilderStrategy) string {
 	}
 }
 
-func (i Driver) EnType() string {
-	names := [...]string{"postgres", "mysql", "doris"}
-	if i < 0 || int(i) >= len(names) {
-		// 处理未知类型的情况
-		return "unknown"
-	}
-	return names[i]
-}
+// func (i Driver) EnType() string {
+// 	names := [...]string{"postgres", "mysql", "doris"}
+// 	if i < 0 || int(i) >= len(names) {
+// 		// 处理未知类型的情况
+// 		return "unknown"
+// 	}
+// 	return names[i]
+// }
 
-func DriverEnumType(index Driver) string {
-	switch index {
-	case DriverPostgres, DriverMysql, DriverDoris:
-		return index.EnType()
-	default:
-		return "unknown"
-	}
-}
+// func DriverEnumType(index Driver) string {
+// 	switch index {
+// 	case DriverPostgres, DriverMysql, DriverDoris:
+// 		return index.EnType()
+// 	default:
+// 		return "unknown"
+// 	}
+// }

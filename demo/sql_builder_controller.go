@@ -76,7 +76,7 @@ func GetGenProduct(c *gin.Context) {
 		return
 	}
 
-	result := map[string]interface{}{"rows": data}
+	result := map[string]any{"rows": data}
 
 	resp := common.Response{
 		Code: http.StatusOK,

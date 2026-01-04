@@ -36,7 +36,7 @@ type MetabaseDatabase struct {
 }
 
 // JSONObject is a placeholder for representing JSON objects in Go
-type JSONObject map[string]interface{}
+type JSONObject map[string]any
 
 func GetOneDatabase(c *gin.Context, id int) (MetabaseDatabase, error) {
 	// 从 Gin 上下文中获取 db 对象

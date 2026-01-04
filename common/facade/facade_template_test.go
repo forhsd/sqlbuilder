@@ -396,7 +396,7 @@ func extractDefinitions(templateStr string) (map[string]string, map[string]strin
 	masterDefinitions := make(map[string]string)
 
 	// 提前执行模板的数据
-	subTmplData := map[string]interface{}{
+	subTmplData := map[string]any{
 		"Title":   "标题 Welcome",
 		"Heading": "表头 Hello, World!",
 		"Content": "正文 This is the about page content.",

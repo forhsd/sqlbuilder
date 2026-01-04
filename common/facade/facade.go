@@ -189,6 +189,9 @@ func (abs *AbstractModelBuilderFacade) Execute(req *pb.BuilderRequest) (string, 
 		return "", errors.New("nest appendBuilder is nil")
 	}
 
+	// 构建TopN
+	appendBuilder = buildTopNProto(req, appendBuilder)
+
 	// builder -> sql
 	boundSQL, err := appendBuilder.ToBoundSQL()
 	if err != nil {

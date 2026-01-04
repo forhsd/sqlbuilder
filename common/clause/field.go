@@ -23,7 +23,7 @@ const (
 // FieldClause 使用需要断言
 type FieldClause struct {
 	// 包含: Column 或 Expression
-	Column interface{} `json:"column"`
+	Column any `json:"column"`
 }
 
 type Column struct {
@@ -46,7 +46,7 @@ type Column struct {
 	//// 主键，唯一键，自生成策略;e.g. pk/auto, pk/uuid, self/uuid, self/snowfake
 	//UniType string `json:"uniType"`
 	//// 唯一值
-	//UniValue interface{} `json:"uniValue"`
+	//UniValue any `json:"uniValue"`
 	//// 字段显示名称; 字段别名取field, 展示名取用户输入
 	//DisplayName string `json:"displayName"`
 	//// 字段类型, 用于校对json值; e.g. 字符串转时间
@@ -54,9 +54,9 @@ type Column struct {
 	//// 是否需要校对?
 	//UseValidate bool `json:"useValidate"`
 	//// 字段值, 主要针对字符串校正
-	//RawColumnValue interface{} `json:"rawColumnValue"`
+	//RawColumnValue any `json:"rawColumnValue"`
 	//// 字段归属方?, (sourceFrom,belong to)映射唯一标识值, 部分场景需要; e.g. 不属于任何 null, 自己就是根部 'root'
-	//UniDependent interface{} `json:"uniDependent"`
+	//UniDependent any `json:"uniDependent"`
 	//// 字段归属方程序值?, 物理表别名或者子查询别名, 用于拼接sql的字符串
 	//RawDependent string `json:"rawDependent"`
 }

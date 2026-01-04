@@ -31,7 +31,7 @@ func GetNativeSql(c *gin.Context, limitN int) (string, error) {
 	return sql, nil
 }
 
-func GetProductPieResult(c *gin.Context, category string) ([]map[string]interface{}, error) {
+func GetProductPieResult(c *gin.Context, category string) ([]map[string]any, error) {
 	// 从 Gin 上下文中获取 db 对象
 	db := c.MustGet("db").(*gorm.DB)
 

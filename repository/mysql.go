@@ -51,7 +51,7 @@ func (b BitBool) Value() (driver.Value, error) {
 }
 
 // gorm读数据时调用: 处理 byte(1)类型
-func (b *BitBool) Scan(src interface{}) error {
+func (b *BitBool) Scan(src any) error {
 	v, ok := src.([]byte)
 	if !ok {
 		return errors.New("bad []byte assertion")

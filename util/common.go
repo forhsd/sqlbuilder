@@ -20,7 +20,7 @@ var ProtoJsonOperate = protojson.MarshalOptions{
 	// UseEnumNumbers:  true,
 }
 
-func (Marshal) Serialize(data interface{}) ([]byte, error) {
+func (Marshal) Serialize(data any) ([]byte, error) {
 	serialized, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (Marshal) Serialize(data interface{}) ([]byte, error) {
 	return serialized, nil
 }
 
-func (Marshal) Deserialize(serialized []byte, target interface{}) error {
+func (Marshal) Deserialize(serialized []byte, target any) error {
 	err := json.Unmarshal(serialized, target)
 	if err != nil {
 		return err

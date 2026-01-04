@@ -112,7 +112,7 @@ func TestExprCond(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, "table1", b.TableName())
 	assert.EqualValues(t, "SELECT id FROM table1 WHERE (a=? OR b=?) AND (c=? OR d=?)", sql)
-	assert.EqualValues(t, []interface{}{1, 2, 3, 4}, args)
+	assert.EqualValues(t, []any{1, 2, 3, 4}, args)
 
 	// 下面示例只能结合 Expression 和 Condition 表达:
 	// Expression.Vars{Condition无next, Condition有1next}

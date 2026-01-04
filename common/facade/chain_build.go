@@ -81,9 +81,6 @@ func buildChainOther(
 		builder = buildLimitProto(builder, sqlRef)
 	}
 
-	// 构建TopN
-	builder = buildTopNProto(req, builder, sqlRef)
-
 	return builder
 }
 
@@ -400,7 +397,7 @@ func calExpressionVarsFormatStringsByProto(expr *pb.Expression, ctx *ModelBuilde
 }
 
 // 将可变参数函数的参数转换为一个字符串
-func variadicArgsFuncVars2oneVar(vars []interface{}, varIndexTypeMap map[int]bool) string {
+func variadicArgsFuncVars2oneVar(vars []any, varIndexTypeMap map[int]bool) string {
 	var builder strings.Builder
 	// 遍历 args，将每个参数拼接成适合的 SQL 字符串
 	for i, arg := range vars {
@@ -475,7 +472,7 @@ func buildJoinItemByProto(builder *xorm.Builder, join *pb.Join, ctx *ModelBuilde
 	}
 }
 
-func buildJoinSchemaTableByProto(join *pb.Join, ctx *ModelBuilderCtx) interface{} {
+func buildJoinSchemaTableByProto(join *pb.Join, ctx *ModelBuilderCtx) any {
 	mixTable := join.GetTable()
 
 	switch v := mixTable.GetMt().(type) {
@@ -495,7 +492,7 @@ func buildJoinSchemaTableByProto(join *pb.Join, ctx *ModelBuilderCtx) interface{
 	}
 }
 
-func buildJoinCondByProtoOuter(joinCondProto *pb.JoinCondition, ctx *ModelBuilderCtx) interface{} {
+func buildJoinCondByProtoOuter(joinCondProto *pb.JoinCondition, ctx *ModelBuilderCtx) any {
 	switch jc := joinCondProto.GetJc().(type) {
 	case *pb.JoinCondition_MultiCond:
 		multiCond := jc.MultiCond
@@ -507,7 +504,7 @@ func buildJoinCondByProtoOuter(joinCondProto *pb.JoinCondition, ctx *ModelBuilde
 	return "1=1"
 }
 
-func buildJoinCondByProto(joinCondProto []*pb.JoinCond, ctx *ModelBuilderCtx) interface{} {
+func buildJoinCondByProto(joinCondProto []*pb.JoinCond, ctx *ModelBuilderCtx) any {
 	// 注意: 规定 []JoinCond 内的元素索引优先级: 1. OnField > onCond(or连接) > onCond(and连接), 否则会导致语义不对
 	var joinConds []string
 
@@ -864,31 +861,44 @@ func buildLimitProto(builder *xorm.Builder, sqlRef *pb.SqlReference) *xorm.Build
 }
 
 // 构建TopN
-func buildTopNProto(req *pb.BuilderRequest, builder *xorm.Builder, sqlRef *pb.SqlReference) *xorm.Builder {
-	if sqlRef.TopN == nil {
+func buildTopNProto(req *pb.BuilderRequest, builder *xorm.Builder) *xorm.Builder {
+
+	if req.TopN == nil {
 		return builder
 	}
+	// selas := ExtractSelectAlias(req.Select)
+	// order := ExtractOrderAlias(req.OrderBy)
 
-	sql, _ := builder.ToBoundSQL()
+	top := req.GetTopN()
 
-	fmt.Println(sql)
+	// 获取转义符
+	sep := clause.DriverKeywordWrapMap[clause.Driver(req.GetDriver())]
+	// 转义字段名
+	selectAlias := EscapeFieldNames(top.SelectAlias, sep)
 
-	// sql, _ = builder.Select("business_day", "dinneramount").From(builder).ToBoundSQL()
+	out := EscapeOuterAlias(top.GetOuterOrder(), sep)
+	outAli := JoinSlice(out, ",")
 
-	selas := ExtractSelectAlias(sqlRef.Select)
-	order := ExtractOrderAlias(sqlRef.OrderBy)
+	// 构建窗口函数
+	topOrder := top.GetTopOrder()
+	id := fmt.Sprintf(
+		"ROW_NUMBER() OVER(ORDER BY %s %s) ___filter_xfjwi__rid",
+		sep+topOrder.GetAlias()+sep, topOrder.GetOrder(),
+	)
+	middle := NewDialect(req).Select("*", id).From(builder, "x")
 
-	sub := Dialect(req)
-	top := sqlRef.GetTopN()
-	id := fmt.Sprintf("ROW_NUMBER() OVER(ORDER BY `%s` %s) ___filter_xfjwi__rid", top.GetField(), top.GetSort())
-	sub = sub.Select("*", id).From(builder, "x")
-
-	out := Dialect(req).Select(selas...).From(sub, "x").Where(xorm.Lte{"___filter_xfjwi__rid": top.GetNum()}).OrderBy(strings.Join(order, ","))
-	sql, err := out.ToBoundSQL()
+	outer := NewDialect(req).
+		Select(selectAlias...).
+		From(middle, "x").
+		Where(xorm.Lte{"___filter_xfjwi__rid": top.GetNum()})
+	if outAli != "" {
+		outer.OrderBy(outAli)
+	}
+	sql, err := outer.ToBoundSQL()
 
 	fmt.Println(sql, err)
 
-	return builder
+	return outer
 }
 
 // 构建 sql.group-by
@@ -904,4 +914,33 @@ func buildGroupByByProto(builder *xorm.Builder, sqlRef *pb.SqlReference, ctx *Mo
 	groupByFragment := fmt.Sprintf(clause.StringLiteral, joinedItems)
 
 	return builder.GroupBy(groupByFragment)
+}
+
+// 转义字段名
+func EscapeFieldNames(slice []string, sep string) []string {
+	result := make([]string, len(slice))
+	for i := range slice {
+		result[i] = sep + slice[i] + sep
+	}
+	return result
+}
+
+// 转义外层排序
+func EscapeOuterAlias(outer []*pb.Sort, sep string) []string {
+	result := make([]string, len(outer))
+	for i := range outer {
+		result[i] = sep + outer[i].GetAlias() + sep + " " + outer[i].GetOrder()
+	}
+	return result
+}
+
+func JoinSlice(slice []string, sep string) string {
+	result := make([]string, 0, len(slice))
+	for i := range slice {
+		s := strings.Trim(slice[i], " ")
+		if s != "" {
+			result = append(result, s)
+		}
+	}
+	return strings.Join(result, sep)
 }

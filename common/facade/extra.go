@@ -151,7 +151,7 @@ func ExtractAdditionFromTemplate(
 }
 
 // 构建方言
-func Dialect(req *pb.BuilderRequest) *xorm.Builder {
+func NewDialect(req *pb.BuilderRequest) *xorm.Builder {
 	switch req.Driver {
 	case pb.Driver_DRIVER_DORIS:
 		return xorm.Dialect(xorm.MYSQL)

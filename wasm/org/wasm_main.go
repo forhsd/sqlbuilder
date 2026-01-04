@@ -24,7 +24,7 @@ func main() {
 }
 
 // 提取模板中的变量名
-func extraValsWrapper(this js.Value, args []js.Value) interface{} {
+func extraValsWrapper(this js.Value, args []js.Value) any {
 	if len(args) != 1 {
 		fmt.Println("ERROR: number of argument doesn't match.")
 		return nil
@@ -36,7 +36,7 @@ func extraValsWrapper(this js.Value, args []js.Value) interface{} {
 		return nil
 	}
 
-	res := make([]interface{}, len(result))
+	res := make([]any, len(result))
 	for i, v := range result {
 		res[i] = v
 	}

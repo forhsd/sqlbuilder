@@ -75,7 +75,7 @@ const (
 )
 
 type Operator struct {
-	Op interface{} // 基于上面3种类型
+	Op any // 基于上面3种类型
 }
 
 var (

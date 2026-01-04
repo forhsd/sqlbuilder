@@ -88,18 +88,18 @@ func ArrConvert(values ...string) []string {
 	return values
 }
 
-func DictConvert(keysAndValues ...interface{}) map[string]interface{} {
+func DictConvert(keysAndValues ...any) map[string]any {
 	if len(keysAndValues)%2 != 0 {
 		return nil
 	}
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	for i := 0; i < len(keysAndValues); i += 2 {
 		m[keysAndValues[i].(string)] = keysAndValues[i+1]
 	}
 	return m
 }
 
-func JsonConvert(data interface{}) string {
+func JsonConvert(data any) string {
 	b, _ := json.Marshal(data)
 	return string(b)
 }

@@ -32,9 +32,9 @@ type Join struct {
 	// 连接表
 	Table Table `json:"table"`
 	// 类型断言: FieldClause, 默认主表字段
-	Left interface{} `json:"left"`
+	Left any `json:"left"`
 	// 类型断言: FieldClause, 默认从表字段
-	Right interface{} `json:"right"`
+	Right any `json:"right"`
 	// 连接条件
 	On LogicExpression `json:"on"`
 }

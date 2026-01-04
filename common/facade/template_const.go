@@ -64,10 +64,10 @@ func IsPgDateDiffTmplFunc(exp string) bool {
 }
 
 // FormatTmplLiteralInnerFunc 解析Expression字面量表达式得到对应的完整字面量字符串
-func FormatTmplLiteralInnerFunc(exp string, args []interface{}) string {
+func FormatTmplLiteralInnerFunc(exp string, args []any) string {
 	if IsPgDateDiffTmplFunc(exp) {
 		// 断言: args 的元素是string, 第一个参数是开始时间，第二个参数是结束时间, 转换为map[string]string
-		// args []interface{} -> data map[string]string
+		// args []any -> data map[string]string
 		data := map[string]string{
 			PGStartTimePlaceHolder: args[0].(string),
 			PGEndTimePlaceHolder:   args[1].(string),

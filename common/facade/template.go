@@ -13,8 +13,8 @@ import (
 // -------------------------------------------  json ----------------------------------------------
 
 type AnalyzeTemplateRequest struct {
-	Tmpl string                 `json:"tmpl"`
-	Args map[string]interface{} `json:"args"`
+	Tmpl string         `json:"tmpl"`
+	Args map[string]any `json:"args"`
 }
 
 type TemplateCtx struct {
@@ -62,7 +62,7 @@ func AnalyzeTemplatesByJson(req AnalyzeTemplateRequest) (*TemplateCtx, error) {
 //   - 返回一个 异常
 func AnalyzeSubTmpl(
 	templateStr string,
-	data map[string]interface{}) (*TemplateCtx, error) {
+	data map[string]any) (*TemplateCtx, error) {
 	// 嵌套模板内容(解析注入参数)模板
 	slaveMap := make(map[string]string)
 	// 主模板内容(不解析)模板
@@ -196,15 +196,15 @@ func AnalyzeTemplatesByProto(req *pb.AnalyzeTemplateRequest) (*TemplateCtx, erro
 //
 // 返回值:
 //   - 返回 json参数
-func DeconstructBuildArgs(args map[string]*pb.TemplateArg) map[string]interface{} {
-	data := make(map[string]interface{})
+func DeconstructBuildArgs(args map[string]*pb.TemplateArg) map[string]any {
+	data := make(map[string]any)
 	for k, v := range args {
 		data[k] = extraTemplateArgValue(v)
 	}
 	return data
 }
 
-func extraTemplateArgValue(v *pb.TemplateArg) interface{} {
+func extraTemplateArgValue(v *pb.TemplateArg) any {
 	switch elem := v.GetData().(type) {
 	case *pb.TemplateArg_StrVal:
 		return elem.StrVal
@@ -216,7 +216,7 @@ func extraTemplateArgValue(v *pb.TemplateArg) interface{} {
 		return elem.BoolVal
 	case *pb.TemplateArg_ValItems:
 		items := elem.ValItems.GetArgs()
-		itemsArr := make([]interface{}, len(items))
+		itemsArr := make([]any, len(items))
 		for i, item := range items {
 			itemsArr[i] = ExtraArgItemValue(item)
 		}

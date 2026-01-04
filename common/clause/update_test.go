@@ -14,12 +14,12 @@ var (
 	oldEnterpriseId = "4330"
 
 	// 新用户id和企业
-	newSets = map[string]interface{}{
+	newSets = map[string]any{
 		"user_id":       newUserId,
 		"enterprise_id": newEnterpriseId,
 	}
 	// 旧用户id和企业
-	oldWhere = map[string]interface{}{
+	oldWhere = map[string]any{
 		"user_id":       oldUserId,
 		"enterprise_id": oldEnterpriseId,
 	}
@@ -113,11 +113,11 @@ func TestBuildNCSimpleSql(t *testing.T) {
 		Driver: DriverPostgres,
 		Schema: "public",
 		Table:  "nc_base_users_v2",
-		Sets: map[string]interface{}{
+		Sets: map[string]any{
 			"fk_user_id": fmt.Sprintf(StringValueFormat, newUserId),
 		},
 		// 旧信息
-		Where: map[string]interface{}{
+		Where: map[string]any{
 			// // 占位符依次: 企业, 用户
 			"base_id":    fmt.Sprintf(FillDataFormat, oldEnterpriseId, oldUserId),
 			"fk_user_id": fmt.Sprintf(StringValueFormat, oldUserId),
@@ -131,11 +131,11 @@ func TestBuildNCSimpleSql(t *testing.T) {
 		Driver: DriverPostgres,
 		Schema: "public",
 		Table:  "nc_base_users_v2",
-		Sets: map[string]interface{}{
+		Sets: map[string]any{
 			"fk_user_id": fmt.Sprintf(StringValueFormat, newUserId),
 		},
 		// 旧信息
-		Where: map[string]interface{}{
+		Where: map[string]any{
 			// // 占位符依次: 企业, 用户
 			"base_id":    fmt.Sprintf(ImportDataFormat, oldEnterpriseId, oldUserId),
 			"fk_user_id": fmt.Sprintf(StringValueFormat, oldUserId),

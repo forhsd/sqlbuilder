@@ -81,7 +81,7 @@ func DefaultValue(expect any, defaultVal any) any {
 			return defaultVal
 		}
 	default:
-		// 处理 interface{} 类型，判断是否为零值
+		// 处理 any 类型，判断是否为零值
 		v := reflect.ValueOf(expect)
 		if v.IsZero() {
 			return defaultVal
@@ -158,7 +158,7 @@ func Normalize1Arr(arr any) string {
 //   - 规范化(SQL)参数值
 func Normalize1ArrNoReflect(arr any) string {
 
-	// 将输入数组转换为 []interface{}
+	// 将输入数组转换为 []any
 	interfaceArr := toInterfaceSlice(arr)
 	if interfaceArr == nil {
 		return ""
@@ -172,7 +172,7 @@ func Normalize1ArrNoReflect(arr any) string {
 	return strings.Join(normalizeArr, ",")
 }
 
-// toInterfaceSlice 将不同类型的切片转换为 []interface{}
+// toInterfaceSlice 将不同类型的切片转换为 []any
 func toInterfaceSlice(arr any) []any {
 	switch v := arr.(type) {
 	case []string:

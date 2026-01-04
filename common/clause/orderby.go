@@ -6,7 +6,7 @@ type OrderByClause struct {
 
 type OrderBy struct {
 	// 类型断言: Column 或者 Expression
-	Dependent interface{} `json:"dependent"`
+	Dependent any `json:"dependent"`
 	// 枚举排序方式; e.g. asc, desc
 	Order string `json:"order"`
 }

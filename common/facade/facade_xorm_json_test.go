@@ -177,7 +177,7 @@ ORDER BY DATE_TRUNC('month', CAST("sample_data"."products"."created_at" AS times
 func TestXORMSQLBuilderSelect(t *testing.T) {
 	fromTable := clause.Table{TableName: "products", TableSchema: "sample_data", TableAlias: "products"}
 
-	selects := []interface{}{
+	selects := []any{
 		clause.Column{
 			Field:   "category",
 			Table:   "products",
@@ -189,7 +189,7 @@ func TestXORMSQLBuilderSelect(t *testing.T) {
 		clause.Expression{
 			Call:     "sum",
 			CallType: "agg",
-			Vars: []interface{}{
+			Vars: []any{
 				//"products",
 				//"price",
 				clause.Column{
@@ -207,7 +207,7 @@ func TestXORMSQLBuilderSelect(t *testing.T) {
 		clause.Expression{
 			Call:     "DATE_TRUNC",
 			CallType: "inner",
-			Vars: []interface{}{
+			Vars: []any{
 				"month",
 				clause.Column{
 					Field:   "created_at",
@@ -224,11 +224,11 @@ func TestXORMSQLBuilderSelect(t *testing.T) {
 		},
 	}
 
-	groupBy := []interface{}{
+	groupBy := []any{
 		clause.Expression{
 			Call:     "DATE_TRUNC",
 			CallType: "inner",
-			Vars: []interface{}{
+			Vars: []any{
 				"month",
 				clause.Column{
 					Field:   "created_at",

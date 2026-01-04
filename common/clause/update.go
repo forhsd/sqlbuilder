@@ -10,8 +10,8 @@ type SimpleUpdate struct {
 	Driver Driver
 	Schema string
 	Table  string
-	Sets   map[string]interface{}
-	Where  map[string]interface{}
+	Sets   map[string]any
+	Where  map[string]any
 }
 
 var (

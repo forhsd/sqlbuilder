@@ -39,19 +39,19 @@ func init() {
 	errorLogger = log.New(logFile, preError, flag)
 }
 
-func Debugf(format string, v ...interface{}) {
+func Debugf(format string, v ...any) {
 	debugLogger.Printf(format, v...)
 }
 
-func Infof(format string, v ...interface{}) {
+func Infof(format string, v ...any) {
 	infoLogger.Printf(format, v...)
 }
 
-func Warningf(format string, v ...interface{}) {
+func Warningf(format string, v ...any) {
 	warningLogger.Printf(format, v...)
 }
 
-func Errorf(format string, v ...interface{}) {
+func Errorf(format string, v ...any) {
 	errorLogger.Printf(format, v...)
 }
 

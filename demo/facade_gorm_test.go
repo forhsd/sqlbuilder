@@ -11,7 +11,7 @@ import (
 )
 
 // assertEqual 是一个辅助函数，用于比较实际值和预期值，如果不相等则输出错误信息
-func assertEqual(t *testing.T, actual, expected interface{}, message string) {
+func assertEqual(t *testing.T, actual, expected any, message string) {
 	if actual != expected {
 		t.Errorf("Assertion failed: %s - Actual: %v, Expected: %v", message, actual, expected)
 	}
@@ -61,7 +61,7 @@ func GenDryRun(db *gorm.DB) string {
 	return drySql
 }
 
-func GenToSqlResult(db *gorm.DB) []map[string]interface{} {
+func GenToSqlResult(db *gorm.DB) []map[string]any {
 	rows, err := db.Table(`"sample_data"."products" p`).Joins(`LEFT JOIN "sample_data"."order" o on o."product_id" = p."id"`).
 		Select(`p."category"`, `sum(p."price") as category_total`).
 		Group(`p."category"`).
@@ -72,7 +72,7 @@ func GenToSqlResult(db *gorm.DB) []map[string]interface{} {
 		logger.Error("[GenToSql] 查询失败: %s", err)
 	}
 
-	var result []map[string]interface{}
+	var result []map[string]any
 
 	//sql2 := db.ToSQL(func(tx *gorm.DB) *gorm.DB {
 	//	return db.Table("products").
@@ -83,7 +83,7 @@ func GenToSqlResult(db *gorm.DB) []map[string]interface{} {
 	//fmt.Printf("sql2: %s \n", sql2)
 
 	for rows.Next() {
-		var rowData map[string]interface{}
+		var rowData map[string]any
 		err := db.ScanRows(rows, &rowData)
 		if err != nil {
 			logger.Error("[GenToSql] 写入result对象失败: %s", err)
